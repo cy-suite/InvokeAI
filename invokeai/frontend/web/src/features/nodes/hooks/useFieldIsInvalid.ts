@@ -3,7 +3,12 @@ import { useAppSelector } from 'app/store/storeHooks';
 import { useConnectionState } from 'features/nodes/hooks/useConnectionState';
 import { useFieldInputTemplate } from 'features/nodes/hooks/useFieldInputTemplate';
 import { selectFieldInputInstance, selectNodesSlice } from 'features/nodes/store/selectors';
-import { isImageFieldCollectionInputInstance, isImageFieldCollectionInputTemplate } from 'features/nodes/types/field';
+import {
+  isImageFieldCollectionInputInstance,
+  isImageFieldCollectionInputTemplate,
+  isStringFieldCollectionInputInstance,
+  isStringFieldCollectionInputTemplate,
+} from 'features/nodes/types/field';
 import { useMemo } from 'react';
 
 export const useFieldIsInvalid = (nodeId: string, fieldName: string) => {
@@ -37,6 +42,18 @@ export const useFieldIsInvalid = (nodeId: string, fieldName: string) => {
       // Else special handling for individual field types
       if (isImageFieldCollectionInputInstance(field) && isImageFieldCollectionInputTemplate(template)) {
         // Image collections may have min or max item counts
+        if (template.minItems !== undefined && field.value.length < template.minItems) {
+          return true;
+        }
+
+        if (template.maxItems !== undefined && field.value.length > template.maxItems) {
+          return true;
+        }
+      }
+
+      // Else special handling for individual field types
+      if (isStringFieldCollectionInputInstance(field) && isStringFieldCollectionInputTemplate(template)) {
+        // String collections may have min or max item counts
         if (template.minItems !== undefined && field.value.length < template.minItems) {
           return true;
         }

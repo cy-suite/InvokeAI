@@ -27,12 +27,17 @@ import type {
   SpandrelImageToImageModelFieldInputTemplate,
   StatefulFieldType,
   StatelessFieldInputTemplate,
+  StringFieldCollectionInputTemplate,
   StringFieldInputTemplate,
   T2IAdapterModelFieldInputTemplate,
   T5EncoderModelFieldInputTemplate,
   VAEModelFieldInputTemplate,
 } from 'features/nodes/types/field';
-import { isImageCollectionFieldType, isStatefulFieldType } from 'features/nodes/types/field';
+import {
+  isImageCollectionFieldType,
+  isStatefulFieldType,
+  isStringCollectionFieldType,
+} from 'features/nodes/types/field';
 import type { InvocationFieldSchema } from 'features/nodes/types/openapi';
 import { isSchemaObject } from 'features/nodes/types/openapi';
 import { t } from 'i18next';
@@ -127,6 +132,36 @@ const buildStringFieldInputTemplate: FieldInputTemplateBuilder<StringFieldInputT
 
   if (schemaObject.maxLength !== undefined) {
     template.maxLength = schemaObject.maxLength;
+  }
+
+  return template;
+};
+
+const buildStringFieldCollectionInputTemplate: FieldInputTemplateBuilder<StringFieldCollectionInputTemplate> = ({
+  schemaObject,
+  baseField,
+  fieldType,
+}) => {
+  const template: StringFieldCollectionInputTemplate = {
+    ...baseField,
+    type: fieldType,
+    default: schemaObject.default ?? (schemaObject.orig_required ? [] : undefined),
+  };
+
+  if (schemaObject.minLength !== undefined) {
+    template.minLength = schemaObject.minLength;
+  }
+
+  if (schemaObject.maxLength !== undefined) {
+    template.maxLength = schemaObject.maxLength;
+  }
+
+  if (schemaObject.minItems !== undefined) {
+    template.minItems = schemaObject.minItems;
+  }
+
+  if (schemaObject.maxItems !== undefined) {
+    template.maxItems = schemaObject.maxItems;
   }
 
   return template;
@@ -553,8 +588,14 @@ export const buildFieldInputTemplate = (
 
   if (isStatefulFieldType(fieldType)) {
     if (isImageCollectionFieldType(fieldType)) {
-      fieldType;
       return buildImageFieldCollectionInputTemplate({
+        schemaObject: fieldSchema,
+        baseField,
+        fieldType,
+      });
+    } else if (isStringCollectionFieldType(fieldType)) {
+      fieldType;
+      return buildStringFieldCollectionInputTemplate({
         schemaObject: fieldSchema,
         baseField,
         fieldType,

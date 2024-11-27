@@ -30,9 +30,17 @@ import { imageDTOToImageObject, imageDTOToImageWithDims, initialControlNet } fro
 import { calculateNewSize } from 'features/controlLayers/util/getScaledBoundingBoxDimensions';
 import { imageToCompareChanged, selectionChanged } from 'features/gallery/store/gallerySlice';
 import type { BoardId } from 'features/gallery/store/types';
-import { fieldImageCollectionValueChanged, fieldImageValueChanged } from 'features/nodes/store/nodesSlice';
+import {
+  fieldImageCollectionValueChanged,
+  fieldImageValueChanged,
+  fieldStringCollectionValueChanged,
+} from 'features/nodes/store/nodesSlice';
 import { selectFieldInputInstance, selectNodesSlice } from 'features/nodes/store/selectors';
-import { type FieldIdentifier, isImageFieldCollectionInputInstance } from 'features/nodes/types/field';
+import {
+  type FieldIdentifier,
+  isImageFieldCollectionInputInstance,
+  isStringFieldCollectionInputInstance,
+} from 'features/nodes/types/field';
 import { upscaleInitialImageChanged } from 'features/parameters/store/upscaleSlice';
 import { getOptimalDimension } from 'features/parameters/util/optimalDimension';
 import { uniqBy } from 'lodash-es';
@@ -122,6 +130,76 @@ export const removeImageFromNodeImageFieldCollectionAction = (arg: {
   const imagesWithoutTheImageToRemove = images.filter((image) => image.image_name !== imageName);
   const uniqueImages = uniqBy(imagesWithoutTheImageToRemove, 'image_name');
   dispatch(fieldImageCollectionValueChanged({ ...fieldIdentifier, value: uniqueImages }));
+};
+
+export const addStringToNodeStringFieldCollectionAction = (arg: {
+  value: string;
+  fieldIdentifier: FieldIdentifier;
+  dispatch: AppDispatch;
+  getState: () => RootState;
+}) => {
+  const { value, fieldIdentifier, dispatch, getState } = arg;
+  const fieldInputInstance = selectFieldInputInstance(
+    selectNodesSlice(getState()),
+    fieldIdentifier.nodeId,
+    fieldIdentifier.fieldName
+  );
+
+  if (!isStringFieldCollectionInputInstance(fieldInputInstance)) {
+    log.warn({ fieldIdentifier }, 'Attempted to add strings to a non-string field collection');
+    return;
+  }
+
+  const fieldValue = fieldInputInstance.value ? [...fieldInputInstance.value] : [];
+  fieldValue.push(value);
+  dispatch(fieldStringCollectionValueChanged({ ...fieldIdentifier, value: fieldValue }));
+};
+
+export const removeStringFromNodeStringFieldCollectionAction = (arg: {
+  index: number;
+  fieldIdentifier: FieldIdentifier;
+  dispatch: AppDispatch;
+  getState: () => RootState;
+}) => {
+  const { index, fieldIdentifier, dispatch, getState } = arg;
+  const fieldInputInstance = selectFieldInputInstance(
+    selectNodesSlice(getState()),
+    fieldIdentifier.nodeId,
+    fieldIdentifier.fieldName
+  );
+
+  if (!isStringFieldCollectionInputInstance(fieldInputInstance)) {
+    log.warn({ fieldIdentifier }, 'Attempted to remove string to a non-string field collection');
+    return;
+  }
+
+  const fieldValue = fieldInputInstance.value ? [...fieldInputInstance.value] : [];
+  fieldValue.splice(index, 1);
+  dispatch(fieldStringCollectionValueChanged({ ...fieldIdentifier, value: fieldValue }));
+};
+
+export const changeStringOnNodeStringFieldCollectionAction = (arg: {
+  index: number;
+  value: string;
+  fieldIdentifier: FieldIdentifier;
+  dispatch: AppDispatch;
+  getState: () => RootState;
+}) => {
+  const { index, value, fieldIdentifier, dispatch, getState } = arg;
+  const fieldInputInstance = selectFieldInputInstance(
+    selectNodesSlice(getState()),
+    fieldIdentifier.nodeId,
+    fieldIdentifier.fieldName
+  );
+
+  if (!isStringFieldCollectionInputInstance(fieldInputInstance)) {
+    log.warn({ fieldIdentifier }, 'Attempted to add strings to a non-string field collection');
+    return;
+  }
+
+  const fieldValue = fieldInputInstance.value ? [...fieldInputInstance.value] : [];
+  fieldValue.splice(index, 1, value);
+  dispatch(fieldStringCollectionValueChanged({ ...fieldIdentifier, value: fieldValue }));
 };
 
 export const setComparisonImage = (arg: { imageDTO: ImageDTO; dispatch: AppDispatch }) => {

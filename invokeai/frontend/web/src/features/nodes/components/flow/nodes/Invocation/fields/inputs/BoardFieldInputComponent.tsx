@@ -1,5 +1,6 @@
 import type { ComboboxOnChange, ComboboxOption } from '@invoke-ai/ui-library';
 import { Combobox, FormControl } from '@invoke-ai/ui-library';
+import { EMPTY_ARRAY } from 'app/store/constants';
 import { useAppDispatch } from 'app/store/storeHooks';
 import { fieldBoardValueChanged } from 'features/nodes/store/nodesSlice';
 import type { BoardFieldInputInstance, BoardFieldInputTemplate } from 'features/nodes/types/field';
@@ -17,17 +18,18 @@ const BoardFieldInputComponent = (props: FieldComponentProps<BoardFieldInputInst
     { include_archived: true },
     {
       selectFromResult: ({ data }) => {
-        const options: ComboboxOption[] = [
-          {
-            label: 'None',
-            value: 'none',
-          },
-        ].concat(
-          (data ?? []).map(({ board_id, board_name }) => ({
-            label: board_name,
-            value: board_id,
-          }))
-        );
+        if (!data) {
+          return {
+            options: EMPTY_ARRAY,
+            hasBoards: false,
+          };
+        }
+
+        const options: ComboboxOption[] = data.map(({ board_id, board_name, image_count }) => ({
+          label: `${board_name} (${image_count})`,
+          value: board_id,
+        }));
+
         return {
           options,
           hasBoards: options.length > 1,
@@ -45,14 +47,14 @@ const BoardFieldInputComponent = (props: FieldComponentProps<BoardFieldInputInst
         fieldBoardValueChanged({
           nodeId,
           fieldName: field.name,
-          value: v.value !== 'none' ? { board_id: v.value } : undefined,
+          value: { board_id: v.value },
         })
       );
     },
     [dispatch, field.name, nodeId]
   );
 
-  const value = useMemo(() => options.find((o) => o.value === field.value?.board_id), [options, field.value]);
+  const value = useMemo(() => options.find((o) => o.value === field.value?.board_id) ?? null, [options, field.value]);
 
   const noOptionsMessage = useCallback(() => t('boards.noMatching'), [t]);
 
